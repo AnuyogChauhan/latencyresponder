@@ -1,0 +1,78 @@
+{
+  "builders": [
+    {
+      "type": "openstack",
+      "ssh_timeout": "1000s",
+      "identity_endpoint": "http://172.19.74.14:5000/v2.0",
+      "tenant_name": "admin",
+      "username": "admin",
+      "password": "mypass",
+      "region": "RegionOne",
+      "use_floating_ip": true,
+      "floating_ip_pool": "external",
+      "ssh_username": "ubuntu",
+      "image_name": "latency-test-image",
+      "networks": ["bb4e2942-f3b2-47e2-b056-535fe0a6e128"],
+      "source_image": "c0fa8a34-7cde-41bb-9617-1f9c28ac73b9",
+      "flavor": "m1.small",
+      "insecure": "true"
+    }
+  ],
+  "provisioners": [
+    {
+      "destination": "/tmp/apt.conf",
+      "source": "./environment",
+      "type": "file"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo '{{user `ubuntu`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+      "inline": [
+        "mkdir -p /etc/apt && sudo touch /etc/apt/apt.conf",
+        "cp /tmp/apt.conf /etc/apt/apt.conf",
+        "apt-get update",
+        "mkdir -p /opt/ens"
+      ]
+    },
+    {
+      "destination": "/tmp/latencyresponder.cpp",
+      "source": "./latencyresponder.cpp",
+      "type": "file"
+    },
+    {
+      "destination": "/tmp/build.sh",
+      "source": "./build.sh",
+      "type": "file"
+    },
+    {
+      "destination": "/tmp/ens.h",
+      "source": "./ens.h",
+      "type": "file"
+    },
+    {
+      "destination": "/tmp/enscppruntime.cpp",
+      "source": "./enscppruntime.cpp",
+      "type": "file"
+    },
+    {
+      "destination": "/tmp/enscppruntime.h",
+      "source": "./enscppruntime.h",
+      "type": "file"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo '{{user `ubuntu`}}' | {{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+      "inline": [
+        "cp /tmp/latencyresponder.cpp /opt/ens/latencyresponder.cpp",
+        "cp /tmp/build.sh /opt/ens/build.sh",
+        "cp /tmp/ens.h /opt/ens/ens.h",
+        "cp /tmp/enscppruntime.cpp /opt/ens/enscppruntime.cpp",
+        "cp /tmp/enscppruntime.h /opt/ens/enscppruntime.h",
+        "cd /opt/ens/",
+        "chmod 755 build.sh",
+        "./build.sh",
+        "cp obj/latencyresponder.so ."
+      ]
+    }
+  ]
+}
